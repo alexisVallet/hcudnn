@@ -58,8 +58,58 @@ module Foreign.CUDA.CuDNN(
   , setFilterNdDescriptor
   , getFilterNdDescriptor
   , destroyFilterDescriptor
+  , createConvolutionDescriptor
+  , setConvolution2dDescriptor
+  , getConvolution2dDescriptor
+  , getConvolution2dForwardOutputDim
+  , setConvolutionNdDescriptor
+  , getConvolutionNdDescriptor
+  , getConvolutionNdForwardOutputDim
+  , destroyConvolutionDescriptor
+  , ConvolutionFwdPreference
+  , convolution_fwd_no_workspace
+  , convolution_fwd_prefer_fastest
+  , convolution_fwd_specify_workspace_limit
+  , ConvolutionFwdAlgo
+  , convolution_fwd_algo_implicit_gemm
+  , convolution_fwd_algo_implicit_precomp_gemm
+  , convolution_fwd_algo_gemm
+  , convolution_fwd_algo_direct
+  , getConvolutionForwardAlgorithm
+  , getConvolutionForwardWorkspaceSize
+  , convolutionForward
+  , convolutionBackwardBias
+  , convolutionBackwardFilter
+  , convolutionBackwardData
+  , im2Col
+  , SoftmaxAlgorithm
+  , softmax_fast
+  , softmax_accurate
+  , SoftmaxMode
+  , softmax_mode_instance
+  , softmax_mode_channel
+  , softmaxForward
+  , softmaxBackward
+  , PoolingMode
+  , pooling_max
+  , pooling_average_count_include_padding
+  , pooling_average_count_exclude_padding
+  , createPoolingDescriptor
+  , setPooling2dDescriptor
+  , getPooling2dDescriptor
+  , setPoolingNdDescriptor
+  , getPoolingNdDescriptor
+  , getPoolingNdForwardOutputDim
+  , cudnnDestroyPoolingDescriptor
+  , poolingForward
+  , poolingBackward
+  , ActivationMode
+  , activation_sigmoid
+  , activation_relu
+  , activation_tanh
+  , activationForward
+  , activationBackward
   ) where
-
 import Foreign
 import Foreign.C
 import Foreign.CUDA.Types
@@ -301,3 +351,359 @@ foreign import ccall unsafe "cudnnGetFilterNdDescriptor"
 
 foreign import ccall unsafe "cudnnDestroyFilterDescriptor"
   destroyFilterDescriptor :: FilterDescriptor -> IO Status
+
+-- Convolution descriptor manipulations.
+foreign import ccall unsafe "cudnnCreateConvolutionDescriptor"
+  createConvolutionDescriptor :: Ptr ConvolutionDescriptor
+                              -> IO Status
+
+foreign import ccall unsafe "cudnnSetConvolution2dDescriptor"
+  setConvolution2dDescriptor :: ConvolutionDescriptor
+                             -> CInt -- pad_h
+                             -> CInt -- pad_w
+                             -> CInt -- u vertical stride
+                             -> CInt -- v horizontal stride
+                             -> CInt -- upscalex
+                             -> CInt -- upscaley
+                             -> ConvolutionMode
+                             -> IO Status
+
+foreign import ccall unsafe "cudnnGetConvolution2dDescriptor"
+  getConvolution2dDescriptor :: ConvolutionDescriptor
+                             -> Ptr CInt -- pad_h
+                             -> Ptr CInt -- pad_w
+                             -> Ptr CInt -- u
+                             -> Ptr CInt -- v
+                             -> Ptr CInt -- upscalex
+                             -> Ptr CInt -- upscaley
+                             -> Ptr ConvolutionMode
+                             -> IO Status
+
+foreign import ccall unsafe "cudnnGetConvolution2dForwardOutputDim"
+  getConvolution2dForwardOutputDim :: ConvolutionDescriptor
+                                   -> TensorDescriptor
+                                   -> FilterDescriptor
+                                   -> Ptr CInt -- n
+                                   -> Ptr CInt -- c
+                                   -> Ptr CInt -- h
+                                   -> Ptr CInt -- w
+                                   -> IO Status
+
+foreign import ccall unsafe "cudnnSetConvolutionNdDescriptor"
+  setConvolutionNdDescriptor :: ConvolutionDescriptor
+                             -> CInt -- array length nbDims-2 size
+                             -> Ptr CInt -- paddings array
+                             -> Ptr CInt -- filter strides array
+                             -> Ptr CInt -- upscales array
+                             -> ConvolutionMode
+                             -> IO Status
+
+foreign import ccall unsafe "cudnnGetConvolutionNdDescriptor"
+  getConvolutionNdDescriptor :: ConvolutionDescriptor
+                             -> CInt -- requested array length
+                             -> Ptr CInt -- array length
+                             -> Ptr CInt -- paddings array
+                             -> Ptr CInt -- strides array
+                             -> Ptr CInt -- upscales array
+                             -> Ptr ConvolutionMode
+                             -> IO Status
+
+foreign import ccall unsafe "cudnnGetConvolutionNdForwardOutputDim"
+  getConvolutionNdForwardOutputDim :: ConvolutionDescriptor
+                                   -> TensorDescriptor
+                                   -> FilterDescriptor
+                                   -> CInt -- nbDims
+                                   -> Ptr CInt -- tensor output dims
+                                   -> IO Status
+
+foreign import ccall unsafe "cudnnDestroyConvolutionDescriptor"
+  destroyConvolutionDescriptor :: ConvolutionDescriptor
+                               -> IO Status
+
+newtype ConvolutionFwdPreference = ConvolutionFwdPreference {
+  unConvolutionForwardPreference :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum ConvolutionFwdPreference, ConvolutionFwdPreference
+ , convolution_fwd_no_workspace = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE
+ , convolution_fwd_prefer_fastest = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, convolution_fwd_specify_workspace_limit = CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT
+ }
+
+newtype ConvolutionFwdAlgo = ConvolutionFwdAlgo {
+  unConvolutionFwdAlgo :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum ConvolutionFwdAlgo, ConvolutionFwdAlgo
+ , convolution_fwd_algo_implicit_gemm = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM
+ , convolution_fwd_algo_implicit_precomp_gemm = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM
+ , convolution_fwd_algo_gemm = CUDNN_CONVOLUTION_FWD_ALGO_GEMM
+ , convolution_fwd_algo_direct = CUDNN_CONVOLUTION_FWD_ALGO_DIRECT
+ }
+
+foreign import ccall unsafe "cudnnGetConvolutionForwardAlgorithm"
+  getConvolutionForwardAlgorithm :: Handle
+                                 -> TensorDescriptor -- srcDesc
+                                 -> FilterDescriptor
+                                 -> ConvolutionDescriptor
+                                 -> TensorDescriptor -- destDesc
+                                 -> ConvolutionFwdPreference
+                                 -> CSize -- memory limit in bytes
+                                 -> Ptr ConvolutionFwdAlgo
+                                 -> IO Status
+
+foreign import ccall unsafe "cudnnGetConvolutionForwardWorkspaceSize"
+  getConvolutionForwardWorkspaceSize :: Handle
+                                     -> TensorDescriptor -- srcDesc
+                                     -> FilterDescriptor
+                                     -> ConvolutionDescriptor
+                                     -> TensorDescriptor -- dstDesc
+                                     -> ConvolutionFwdAlgo
+                                     -> Ptr CSize -- size in bytes
+                                     -> IO Status
+
+foreign import ccall unsafe "cudnnConvolutionForward"
+  convolutionForward :: Handle
+                     -> Ptr () -- alpha
+                     -> TensorDescriptor -- srcDesc
+                     -> Ptr () -- srcData
+                     -> FilterDescriptor
+                     -> Ptr () -- filterData
+                     -> ConvolutionDescriptor
+                     -> ConvolutionFwdAlgo
+                     -> Ptr () -- workspace
+                     -> Ptr CSize -- workspace size in bytes
+                     -> Ptr () -- beta
+                     -> TensorDescriptor -- destDesc
+                     -> Ptr () -- destData
+                     -> IO Status
+
+-- Convolution gradient with regards to the bias.
+foreign import ccall unsafe "cudnnConvolutionBackwardBias"
+  convolutionBackwardBias :: Handle
+                          -> Ptr () -- alpha
+                          -> TensorDescriptor -- srcDesc
+                          -> Ptr () -- srcData
+                          -> Ptr () -- beta
+                          -> TensorDescriptor -- destDesc
+                          -> Ptr () -- destData
+                          -> IO Status
+
+-- Computes gradient with regards to the filters.
+foreign import ccall unsafe "cudnnConvolutionBackwardFilter"
+  convolutionBackwardFilter :: Handle
+                            -> Ptr () -- alpha
+                            -> TensorDescriptor -- srcDesc
+                            -> Ptr () -- srcData
+                            -> TensorDescriptor -- diffDesc
+                            -> Ptr () -- diffData
+                            -> ConvolutionDescriptor
+                            -> Ptr () -- beta
+                            -> FilterDescriptor -- gradDesc
+                            -> Ptr () -- gradData
+                            -> IO Status
+
+-- Computes gradient with regards to the data.
+foreign import ccall unsafe "cudnnConvolutionBackwardData"
+  convolutionBackwardData :: Handle
+                          -> Ptr () -- alpha
+                          -> FilterDescriptor
+                          -> Ptr () -- filterData
+                          -> TensorDescriptor -- diffDesc
+                          -> Ptr () -- diffData
+                          -> ConvolutionDescriptor
+                          -> Ptr () -- beta
+                          -> TensorDescriptor -- gradDesc
+                          -> Ptr () -- gradData
+                          -> IO Status
+
+foreign import ccall unsafe "cudnnIm2Col"
+  im2Col :: Handle
+         -> Ptr () -- alpha
+         -> TensorDescriptor -- srcDesc
+         -> Ptr () -- srcData
+         -> FilterDescriptor
+         -> ConvolutionDescriptor
+         -> Ptr () -- colBuffer
+         -> IO Status
+
+-- Softmax
+newtype SoftmaxAlgorithm = SoftmaxAlgorithm {
+  unSoftmaxAlgorithm :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum SoftmaxAlgorithm, SoftmaxAlgorithm
+ , softmax_fast = CUDNN_SOFTMAX_FAST
+ , softmax_accurate = CUDNN_SOFTMAX_ACCURATE
+ }
+
+newtype SoftmaxMode = SoftmaxMode {
+  unSoftmaxMode :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum SoftmaxMode, SoftmaxMode
+ , softmax_mode_instance = CUDNN_SOFTMAX_MODE_INSTANCE
+ , softmax_mode_channel = CUDNN_SOFTMAX_MODE_CHANNEL
+ }
+
+foreign import ccall unsafe "cudnnSoftmaxForward"
+  softmaxForward :: Handle
+                 -> SoftmaxAlgorithm
+                 -> SoftmaxMode
+                 -> Ptr () -- alpha
+                 -> TensorDescriptor -- srcDesc
+                 -> Ptr () -- srcData
+                 -> Ptr () -- beta
+                 -> TensorDescriptor -- destDesc
+                 -> Ptr () -- destData
+                 -> IO Status
+
+foreign import ccall unsafe "cudnnSoftmaxBackward"
+  softmaxBackward :: Handle
+                  -> SoftmaxAlgorithm
+                  -> SoftmaxMode
+                  -> Ptr () -- alpha
+                  -> TensorDescriptor -- srcDesc
+                  -> Ptr () -- srcData
+                  -> TensorDescriptor -- srcDiffDesc
+                  -> Ptr ()  -- srcDiffData
+                  -> Ptr () -- beta
+                  -> TensorDescriptor -- destDiffDesc
+                  -> Ptr () -- destDiffData
+                  -> IO Status
+
+-- Pooling.
+newtype PoolingMode = PoolingMode {
+  unPoolingMode :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum PoolingMode, PoolingMode
+ , pooling_max = CUDNN_POOLING_MAX
+ , pooling_average_count_include_padding = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING
+ , pooling_average_count_exclude_padding = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING
+ }
+
+foreign import ccall unsafe "cudnnCreatePoolingDescriptor"
+  createPoolingDescriptor :: Ptr PoolingDescriptor -> IO Status
+
+foreign import ccall unsafe "cudnnSetPooling2dDescriptor"
+  setPooling2dDescriptor :: PoolingDescriptor
+                         -> PoolingMode
+                         -> CInt -- window height
+                         -> CInt -- window width
+                         -> CInt -- vertical padding
+                         -> CInt -- horizontal padding
+                         -> CInt -- vertical stride
+                         -> CInt -- horizontal stride
+                         -> IO Status
+
+foreign import ccall unsafe "cudnnGetPooling2dDescriptor"
+  getPooling2dDescriptor :: PoolingDescriptor
+                         -> Ptr PoolingMode
+                         -> Ptr CInt -- window height
+                         -> Ptr CInt -- window width
+                         -> Ptr CInt -- vertical padding
+                         -> Ptr CInt -- horizontal padding
+                         -> Ptr CInt -- vertical stride
+                         -> Ptr CInt -- horizontal stride
+                         -> IO Status
+
+foreign import ccall unsafe "cudnnSetPoolingNdDescriptor"
+  setPoolingNdDescriptor :: PoolingDescriptor
+                         -> PoolingMode
+                         -> CInt -- nbDims
+                         -> Ptr CInt -- window dimensions array
+                         -> Ptr CInt -- paddings array
+                         -> Ptr CInt -- strides array
+                         -> IO Status
+
+foreign import ccall unsafe "cudnnGetPoolingNdDescriptor"
+  getPoolingNdDescriptor :: PoolingDescriptor
+                         -> CInt -- nbDimsRequested
+                         -> Ptr PoolingMode
+                         -> Ptr CInt -- nbDims
+                         -> Ptr CInt -- window dimensons array
+                         -> Ptr CInt -- paddings array
+                         -> Ptr CInt -- strides array
+                         -> IO Status
+
+foreign import ccall unsafe "cudnnGetPoolingNdForwardOutputDim"
+  getPoolingNdForwardOutputDim :: PoolingDescriptor
+                               -> TensorDescriptor
+                               -> CInt -- nbDims
+                               -> Ptr CInt -- output tensor dimensions
+                               -> IO Status
+
+foreign import ccall unsafe "cudnnGetPooling2dForwardOutputDim"
+  getPooling2dForwardOutputDim :: PoolingDescriptor
+                               -> TensorDescriptor
+                               -> Ptr CInt -- outN
+                               -> Ptr CInt -- outC
+                               -> Ptr CInt -- outH
+                               -> Ptr CInt -- outW
+                               -> IO Status
+
+foreign import ccall unsafe "cudnnDestroyPoolingDescriptor"
+  cudnnDestroyPoolingDescriptor :: PoolingDescriptor -> IO Status
+
+foreign import ccall unsafe "cudnnPoolingForward"
+  poolingForward :: Handle
+                 -> PoolingDescriptor
+                 -> Ptr () -- alpha
+                 -> TensorDescriptor -- srcDesc
+                 -> Ptr () -- srcData
+                 -> Ptr () -- beta
+                 -> TensorDescriptor -- destDesc
+                 -> Ptr () -- destData
+                 -> IO Status
+
+foreign import ccall unsafe "cudnnPoolingBackward"
+  poolingBackward :: Handle
+                  -> PoolingDescriptor
+                  -> Ptr () -- alpha
+                  -> TensorDescriptor -- srcDesc
+                  -> Ptr () -- srcData
+                  -> TensorDescriptor -- srcDiffDesc
+                  -> Ptr () -- srcDiffData
+                  -> TensorDescriptor -- destDesc
+                  -> Ptr () -- destData
+                  -> Ptr () -- beta
+                  -> TensorDescriptor -- destDiffDesc
+                  -> Ptr () -- destDiffData
+                  -> IO Status
+
+-- Activation functions.
+newtype ActivationMode = ActivationMode {
+  unActivationMode :: CInt
+  } deriving (Show, Eq, Storable)
+
+#{enum ActivationMode, ActivationMode
+ , activation_sigmoid = CUDNN_ACTIVATION_SIGMOID
+ , activation_relu = CUDNN_ACTIVATION_RELU
+ , activation_tanh = CUDNN_ACTIVATION_TANH
+ }
+
+foreign import ccall "cudnnActivationForward"
+  activationForward :: Handle
+                    -> ActivationMode
+                    -> Ptr () -- alpha
+                    -> TensorDescriptor -- srcDesc
+                    -> Ptr () -- srcData
+                    -> Ptr () -- beta
+                    -> TensorDescriptor -- destDesc
+                    -> Ptr () -- destData
+                    -> IO Status
+
+foreign import ccall "cudnnActivationBackward"
+  activationBackward :: Handle
+                     -> ActivationMode
+                     -> Ptr () -- alpha
+                     -> TensorDescriptor -- srcDesc
+                     -> Ptr () -- srcData
+                     -> TensorDescriptor -- srcDiffDesc
+                     -> Ptr () -- srcDiffData
+                     -> TensorDescriptor -- destDesc
+                     -> Ptr () -- destData
+                     -> Ptr () --beta
+                     -> TensorDescriptor -- destDiffDesc
+                     -> Ptr () -- destDiffData
+                     -> IO Status
