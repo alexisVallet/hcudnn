@@ -470,7 +470,7 @@ foreign import ccall unsafe "cudnnConvolutionForward"
                      -> DevicePtr a -- filterData
                      -> ConvolutionDescriptor
                      -> ConvolutionFwdAlgo
-                     -> DevicePtr a -- workspace
+                     -> DevicePtr Int8 -- workspace
                      -> CSize -- workspace size in bytes
                      -> DevicePtr a -- beta
                      -> TensorDescriptor -- destDesc
