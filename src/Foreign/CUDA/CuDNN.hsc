@@ -261,10 +261,10 @@ foreign import ccall unsafe "cudnnDestroyTensorDescriptor"
 -- Apparently a tensor layout conversion helper?
 foreign import ccall unsafe "cudnnTransformTensor"
   transformTensor :: Handle
-                  -> DevicePtr a -- alpha
+                  -> Ptr a -- alpha
                   -> TensorDescriptor -- srcDesc
                   -> DevicePtr a -- srcData
-                  -> DevicePtr a -- beta
+                  -> Ptr a -- beta
                   -> TensorDescriptor -- destDesc
                   -> DevicePtr a -- destData
                   -> IO Status
@@ -286,10 +286,10 @@ newtype AddMode = AddMode {
 foreign import ccall unsafe "cudnnAddTensor"
   addTensor :: Handle
             -> AddMode
-            -> DevicePtr a -- alpha
+            -> Ptr a -- alpha
             -> TensorDescriptor -- biasDesc
             -> DevicePtr a -- biasData
-            -> DevicePtr a -- beta
+            -> Ptr a -- beta
             -> TensorDescriptor -- srcDestDesc
             -> DevicePtr a -- srcDestData
             -> IO Status
@@ -463,7 +463,7 @@ foreign import ccall unsafe "cudnnGetConvolutionForwardWorkspaceSize"
 
 foreign import ccall unsafe "cudnnConvolutionForward"
   convolutionForward :: Handle
-                     -> DevicePtr a -- alpha
+                     -> Ptr a -- alpha
                      -> TensorDescriptor -- srcDesc
                      -> DevicePtr a -- srcData
                      -> FilterDescriptor
@@ -472,7 +472,7 @@ foreign import ccall unsafe "cudnnConvolutionForward"
                      -> ConvolutionFwdAlgo
                      -> DevicePtr Int8 -- workspace
                      -> CSize -- workspace size in bytes
-                     -> DevicePtr a -- beta
+                     -> Ptr a -- beta
                      -> TensorDescriptor -- destDesc
                      -> DevicePtr a -- destData
                      -> IO Status
@@ -480,10 +480,10 @@ foreign import ccall unsafe "cudnnConvolutionForward"
 -- Convolution gradient with regards to the bias.
 foreign import ccall unsafe "cudnnConvolutionBackwardBias"
   convolutionBackwardBias :: Handle
-                          -> DevicePtr a -- alpha
+                          -> Ptr a -- alpha
                           -> TensorDescriptor -- srcDesc
                           -> DevicePtr a -- srcData
-                          -> DevicePtr a -- beta
+                          -> Ptr a -- beta
                           -> TensorDescriptor -- destDesc
                           -> DevicePtr a -- destData
                           -> IO Status
@@ -491,13 +491,13 @@ foreign import ccall unsafe "cudnnConvolutionBackwardBias"
 -- Computes gradient with regards to the filters.
 foreign import ccall unsafe "cudnnConvolutionBackwardFilter"
   convolutionBackwardFilter :: Handle
-                            -> DevicePtr a -- alpha
+                            -> Ptr a -- alpha
                             -> TensorDescriptor -- srcDesc
                             -> DevicePtr a -- srcData
                             -> TensorDescriptor -- diffDesc
                             -> DevicePtr a -- diffData
                             -> ConvolutionDescriptor
-                            -> DevicePtr a -- beta
+                            -> Ptr a -- beta
                             -> FilterDescriptor -- gradDesc
                             -> DevicePtr a -- gradData
                             -> IO Status
@@ -505,20 +505,20 @@ foreign import ccall unsafe "cudnnConvolutionBackwardFilter"
 -- Computes gradient with regards to the data.
 foreign import ccall unsafe "cudnnConvolutionBackwardData"
   convolutionBackwardData :: Handle
-                          -> DevicePtr a -- alpha
+                          -> Ptr a -- alpha
                           -> FilterDescriptor
                           -> DevicePtr a -- filterData
                           -> TensorDescriptor -- diffDesc
                           -> DevicePtr a -- diffData
                           -> ConvolutionDescriptor
-                          -> DevicePtr a -- beta
+                          -> Ptr a -- beta
                           -> TensorDescriptor -- gradDesc
                           -> DevicePtr a -- gradData
                           -> IO Status
 
 foreign import ccall unsafe "cudnnIm2Col"
   im2Col :: Handle
-         -> DevicePtr a -- alpha
+         -> Ptr a -- alpha
          -> TensorDescriptor -- srcDesc
          -> DevicePtr a -- srcData
          -> FilterDescriptor
@@ -549,10 +549,10 @@ foreign import ccall unsafe "cudnnSoftmaxForward"
   softmaxForward :: Handle
                  -> SoftmaxAlgorithm
                  -> SoftmaxMode
-                 -> DevicePtr a -- alpha
+                 -> Ptr a -- alpha
                  -> TensorDescriptor -- srcDesc
                  -> DevicePtr a -- srcData
-                 -> DevicePtr a -- beta
+                 -> Ptr a -- beta
                  -> TensorDescriptor -- destDesc
                  -> DevicePtr a -- destData
                  -> IO Status
@@ -561,12 +561,12 @@ foreign import ccall unsafe "cudnnSoftmaxBackward"
   softmaxBackward :: Handle
                   -> SoftmaxAlgorithm
                   -> SoftmaxMode
-                  -> DevicePtr a -- alpha
+                  -> Ptr a -- alpha
                   -> TensorDescriptor -- srcDesc
                   -> DevicePtr a -- srcData
                   -> TensorDescriptor -- srcDiffDesc
                   -> DevicePtr a  -- srcDiffData
-                  -> DevicePtr a -- beta
+                  -> Ptr a -- beta
                   -> TensorDescriptor -- destDiffDesc
                   -> DevicePtr a -- destDiffData
                   -> IO Status
@@ -648,10 +648,10 @@ foreign import ccall unsafe "cudnnDestroyPoolingDescriptor"
 foreign import ccall unsafe "cudnnPoolingForward"
   poolingForward :: Handle
                  -> PoolingDescriptor
-                 -> DevicePtr a -- alpha
+                 -> Ptr a -- alpha
                  -> TensorDescriptor -- srcDesc
                  -> DevicePtr a -- srcData
-                 -> DevicePtr a -- beta
+                 -> Ptr a -- beta
                  -> TensorDescriptor -- destDesc
                  -> DevicePtr a -- destData
                  -> IO Status
@@ -659,14 +659,14 @@ foreign import ccall unsafe "cudnnPoolingForward"
 foreign import ccall unsafe "cudnnPoolingBackward"
   poolingBackward :: Handle
                   -> PoolingDescriptor
-                  -> DevicePtr a -- alpha
+                  -> Ptr a -- alpha
                   -> TensorDescriptor -- srcDesc
                   -> DevicePtr a -- srcData
                   -> TensorDescriptor -- srcDiffDesc
                   -> DevicePtr a -- srcDiffData
                   -> TensorDescriptor -- destDesc
                   -> DevicePtr a -- destData
-                  -> DevicePtr a -- beta
+                  -> Ptr a -- beta
                   -> TensorDescriptor -- destDiffDesc
                   -> DevicePtr a -- destDiffData
                   -> IO Status
@@ -685,10 +685,10 @@ newtype ActivationMode = ActivationMode {
 foreign import ccall "cudnnActivationForward"
   activationForward :: Handle
                     -> ActivationMode
-                    -> DevicePtr a -- alpha
+                    -> Ptr a -- alpha
                     -> TensorDescriptor -- srcDesc
                     -> DevicePtr a -- srcData
-                    -> DevicePtr a -- beta
+                    -> Ptr a -- beta
                     -> TensorDescriptor -- destDesc
                     -> DevicePtr a -- destData
                     -> IO Status
@@ -696,14 +696,14 @@ foreign import ccall "cudnnActivationForward"
 foreign import ccall "cudnnActivationBackward"
   activationBackward :: Handle
                      -> ActivationMode
-                     -> DevicePtr a -- alpha
+                     -> Ptr a -- alpha
                      -> TensorDescriptor -- srcDesc
                      -> DevicePtr a -- srcData
                      -> TensorDescriptor -- srcDiffDesc
                      -> DevicePtr a -- srcDiffData
                      -> TensorDescriptor -- destDesc
                      -> DevicePtr a -- destData
-                     -> DevicePtr a --beta
+                     -> Ptr a --beta
                      -> TensorDescriptor -- destDiffDesc
                      -> DevicePtr a -- destDiffData
                      -> IO Status
