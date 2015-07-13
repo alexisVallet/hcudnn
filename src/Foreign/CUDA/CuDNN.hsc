@@ -99,6 +99,7 @@ module Foreign.CUDA.CuDNN(
   , getPooling2dDescriptor
   , setPoolingNdDescriptor
   , getPoolingNdDescriptor
+  , getPooling2dForwardOutputDim
   , getPoolingNdForwardOutputDim
   , destroyPoolingDescriptor
   , poolingForward
