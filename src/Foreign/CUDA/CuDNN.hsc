@@ -100,7 +100,7 @@ module Foreign.CUDA.CuDNN(
   , setPoolingNdDescriptor
   , getPoolingNdDescriptor
   , getPoolingNdForwardOutputDim
-  , cudnnDestroyPoolingDescriptor
+  , destroyPoolingDescriptor
   , poolingForward
   , poolingBackward
   , ActivationMode
@@ -643,7 +643,7 @@ foreign import ccall unsafe "cudnnGetPooling2dForwardOutputDim"
                                -> IO Status
 
 foreign import ccall unsafe "cudnnDestroyPoolingDescriptor"
-  cudnnDestroyPoolingDescriptor :: PoolingDescriptor -> IO Status
+  destroyPoolingDescriptor :: PoolingDescriptor -> IO Status
 
 foreign import ccall unsafe "cudnnPoolingForward"
   poolingForward :: Handle
