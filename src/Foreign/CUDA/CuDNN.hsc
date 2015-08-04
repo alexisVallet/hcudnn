@@ -99,8 +99,8 @@ module Foreign.CUDA.CuDNN(
   , getPooling2dDescriptor
   , setPoolingNdDescriptor
   , getPoolingNdDescriptor
-  , getPooling2dForwardOutputDim
-  , getPoolingNdForwardOutputDim
+  -- , getPooling2dForwardOutputDim
+  -- , getPoolingNdForwardOutputDim
   , destroyPoolingDescriptor
   , poolingForward
   , poolingBackward
@@ -627,21 +627,23 @@ foreign import ccall unsafe "cudnnGetPoolingNdDescriptor"
                          -> Ptr CInt -- strides array
                          -> IO Status
 
-foreign import ccall unsafe "cudnnGetPoolingNdForwardOutputDim"
-  getPoolingNdForwardOutputDim :: PoolingDescriptor
-                               -> TensorDescriptor
-                               -> CInt -- nbDims
-                               -> Ptr CInt -- output tensor dimensions
-                               -> IO Status
+-- These 2 functions, although they have headers in cudnn.h, do not
+-- have corresponding symbols in libcudnn.so. Bug in CuDNN?
+-- foreign import ccall unsafe "cudnnGetPoolingNdForwardOutputDim"
+--   getPoolingNdForwardOutputDim :: PoolingDescriptor
+--                                -> TensorDescriptor
+--                                -> CInt -- nbDims
+--                                -> Ptr CInt -- output tensor dimensions
+--                                -> IO Status
 
-foreign import ccall unsafe "cudnnGetPooling2dForwardOutputDim"
-  getPooling2dForwardOutputDim :: PoolingDescriptor
-                               -> TensorDescriptor
-                               -> Ptr CInt -- outN
-                               -> Ptr CInt -- outC
-                               -> Ptr CInt -- outH
-                               -> Ptr CInt -- outW
-                               -> IO Status
+-- foreign import ccall unsafe "cudnnGetPooling2dForwardOutputDim"
+--   getPooling2dForwardOutputDim :: PoolingDescriptor
+--                                -> TensorDescriptor
+--                                -> Ptr CInt -- outN
+--                                -> Ptr CInt -- outC
+--                                -> Ptr CInt -- outH
+--                                -> Ptr CInt -- outW
+--                                -> IO Status
 
 foreign import ccall unsafe "cudnnDestroyPoolingDescriptor"
   destroyPoolingDescriptor :: PoolingDescriptor -> IO Status
